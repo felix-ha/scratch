@@ -9,3 +9,7 @@ docker_run:
 .PHONY: docker_shell
 docker_shell:
 	docker run  -it -v `pwd`:/app --entrypoint bash dev
+
+.PHONY: run
+run:
+	python3 main.py
