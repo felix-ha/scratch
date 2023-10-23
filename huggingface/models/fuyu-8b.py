@@ -1,7 +1,7 @@
 import torch
 from  transformers import AutoModel
 import tempfile
-from pathlib
+from pathlib import Path
 
 def compute_size(model):
     state_dict = model.state_dict()
