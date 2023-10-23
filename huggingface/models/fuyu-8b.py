@@ -1,25 +1,21 @@
-import torch
-from  transformers import AutoModel
-import tempfile
-from pathlib import Path
+from transformers import FuyuProcessor, FuyuForCausalLM
+from PIL import Image
 
-def compute_size(model):
-    state_dict = model.state_dict()
-    with tempfile.TemporaryDirectory() as tempdir:
-        tmp_path = Path(tempdir).joinpath("model.pt")
-        torch.save(state_dict, tmp_path)
-        size_mb = tmp_path.stat().st_size / (1024 * 1024)
-    return size_mb
+# load model and processor
+model_id = "adept/fuyu-8b"
+processor = FuyuProcessor.from_pretrained(model_id)
+model = FuyuForCausalLM.from_pretrained(model_id, device_map="cuda:0")
 
-def print_model_stats(model):
-    print(
-        f"{model.__class__.__name__} has {sum(p.numel() for p in model.parameters() if p.requires_grad):,} parameters"
-    )
-    print(f'{compute_size(model)=}')
+# prepare inputs for the model
+text_prompt = "Generate a coco-style caption.\n"
+image_path = "bus.png"  # https://huggingface.co/adept-hf-collab/fuyu-8b/blob/main/bus.png
+image = Image.open(image_path)
 
-checkpoint = "adept/fuyu-8b"
+inputs = processor(text=text_prompt, images=image, return_tensors="pt")
+for k, v in inputs.items():
+    inputs[k] = v.to("cuda:0")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"{device=}")
-model = AutoModel.from_pretrained(checkpoint).to(device)
-print_model_stats(model)
+# autoregressively generate text
+generation_output = model.generate(**inputs, max_new_tokens=7)
+generation_text = processor.batch_decode(generation_output[:, -7:], skip_special_tokens=True)
+print(generation_text)
