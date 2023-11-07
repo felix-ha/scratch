@@ -1,0 +1,9 @@
+version: '3'
+services:
+  python-server:
+    build: . 
+    image: python-server
+    container_name: python-server
+    ports:
+      - "8000:8000"  
+    restart: always  
