@@ -6,12 +6,15 @@ import shutil
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(module)s %(levelname)s - %(message)s")
 
+from logic.foo import bar
+
 app = FastAPI()
 
 @app.get("/")
 def read_root():
     logging.info("got request")
-    return {"message": "Hello, World"}
+    result = bar(1)
+    return {"message": "Hello, World", "result": result}
 
 
 @app.get("/status")
