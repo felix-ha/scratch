@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, File
+from typing import List
+from fastapi import FastAPI, Form, UploadFile, File
 import tempfile
 from pathlib import Path
 import shutil
@@ -30,8 +31,12 @@ def increment(body: dict):
     return {'result': result}
 
 
-@app.post("/uploadfile")
-async def create_upload_file(file: UploadFile = File(...)):
+@app.post("/upload/payloads_and_file")
+def create_upload_file(name: str = Form(...), 
+                        point: float = Form(...),
+                        is_accepted: bool = Form(...),
+                        optional_value: bool = Form(None),
+                        file: UploadFile = File(...)):
     with tempfile.TemporaryDirectory() as temp_dir:
         file_name = Path(temp_dir) / file.filename
         with open(file_name, "wb") as buffer:
@@ -45,7 +50,28 @@ async def create_upload_file(file: UploadFile = File(...)):
         else:
                 content = None
 
-    return {"file_name": file_name.name, "file_extension": file_extension, "content": content}
+    return {"name": name, "point": point, "is_accepted": is_accepted, "optional_value": optional_value,  "file_name": file_name.name, "file_extension": file_extension, "content": content}
+
+
+
+@app.post("/upload/files")
+def create_upload_file(files: List[UploadFile] = File(...)):
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        file_names = []
+        contents = []
+
+        for file_current in files:
+            file_current_name = Path(temp_dir) / file_current.filename
+            with open(file_current_name, "wb") as buffer:
+                shutil.copyfileobj(file_current.file, buffer)
+
+            with open(file_current_name, "rb") as buffer:
+                contents.append(buffer.read())
+
+            file_names.append(file_current.filename)
+
+    return {'file_names': file_names, 'contents': contents}
 
 
 if __name__ == "__main__":
